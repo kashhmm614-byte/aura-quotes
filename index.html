@@ -184,6 +184,11 @@
 
           <div class="dropdown-divider"></div>
 
+          <button type="button" class="dropdown-item" id="btnOpenSupabaseModal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+            <span>Supabase Cloud DB</span>
+          </button>
+
           <button type="button" class="dropdown-item btn-signout" id="btnSignOut">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             <span>Sign Out</span>
@@ -544,10 +549,55 @@
     </div>
   </div>
 
+  <!-- Supabase Cloud Database Configuration & Sync Modal -->
+  <div class="modal-overlay" id="modalSupabase" role="dialog" aria-modal="true" aria-labelledby="modalSupabaseTitle">
+    <div class="modal-card">
+      <div class="bottom-sheet-handle" aria-hidden="true"></div>
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalSupabaseTitle">☁️ Supabase Cloud Database</h2>
+        <button class="btn-close" id="btnCloseSupabase" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <p class="modal-subtitle">Connect your Supabase project to sync all 1,071 quotes, favorites, and 10-digit member UIDs to PostgreSQL in the cloud.</p>
+
+      <form id="formSupabaseConfig">
+        <div class="form-group">
+          <label class="form-label" for="inputSupabaseUrl">Supabase Project URL</label>
+          <input type="url" class="form-input" id="inputSupabaseUrl" placeholder="https://xxxxxxxxxxxx.supabase.co" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputSupabaseKey">Anon / Public API Key</label>
+          <input type="password" class="form-input" id="inputSupabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required>
+        </div>
+
+        <div class="form-group">
+          <div id="supabaseStatusAlert" class="status-alert" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.82rem; margin-top: 8px;"></div>
+        </div>
+
+        <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap; justify-content: flex-end; margin-top: var(--space-md);">
+          <button type="button" class="btn-secondary" id="btnTestSupabase">Test Connection</button>
+          <button type="button" class="btn-secondary" id="btnSyncQuotesToCloud">Sync 1,000+ Quotes</button>
+          <button type="submit" class="btn-primary">Save & Connect</button>
+        </div>
+      </form>
+
+      <div class="setup-guide-box" style="margin-top: 18px; padding: 12px 14px; border-radius: 8px; background: var(--bg-secondary); font-size: 0.78rem; line-height: 1.45; border: 1px solid var(--border-subtle);">
+        <strong>📌 Where to find credentials in Supabase:</strong>
+        <p style="margin: 4px 0 0; color: var(--text-secondary);">In your Supabase Dashboard ➔ <strong>Project Settings</strong> (gear icon) ➔ <strong>API</strong>. Copy your <strong>Project URL</strong> and <strong>Project API key (anon / public)</strong>. Remember to run <code>supabase-schema.sql</code> in the Supabase SQL Editor first!</p>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
   <!-- Application Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
   <script src="js/quotes-data.js"></script>
   <script src="js/db.js"></script>
   <script src="js/auth.js"></script>

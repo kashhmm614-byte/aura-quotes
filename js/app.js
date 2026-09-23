@@ -39,10 +39,12 @@ class AuraApp {
       this.elements.modalCreate,
       this.elements.modalVault,
       this.elements.modalExport,
-      this.elements.modalShortcuts
-    ].forEach(m => this._bindBottomSheetDrag(m));
+      this.elements.modalShortcuts,
+      this.elements.modalSupabase
+    ].filter(Boolean).forEach(m => this._bindBottomSheetDrag(m));
 
     this._initTheme();
+    this._initSupabaseUI();
 
     // Initialize Database
     try {
@@ -111,6 +113,15 @@ class AuraApp {
       modalVault: document.getElementById('modalVault'),
       modalExport: document.getElementById('modalExport'),
       modalShortcuts: document.getElementById('modalShortcuts'),
+      modalSupabase: document.getElementById('modalSupabase'),
+      btnOpenSupabaseModal: document.getElementById('btnOpenSupabaseModal'),
+      btnCloseSupabase: document.getElementById('btnCloseSupabase'),
+      formSupabaseConfig: document.getElementById('formSupabaseConfig'),
+      inputSupabaseUrl: document.getElementById('inputSupabaseUrl'),
+      inputSupabaseKey: document.getElementById('inputSupabaseKey'),
+      btnTestSupabase: document.getElementById('btnTestSupabase'),
+      btnSyncQuotesToCloud: document.getElementById('btnSyncQuotesToCloud'),
+      supabaseStatusAlert: document.getElementById('supabaseStatusAlert'),
       btnOpenCreate: document.getElementById('btnOpenCreate'),
       btnCloseCreate: document.getElementById('btnCloseCreate'),
       btnCancelCreate: document.getElementById('btnCancelCreate'),
@@ -501,8 +512,136 @@ class AuraApp {
       this.elements.modalCreate,
       this.elements.modalVault,
       this.elements.modalExport,
-      this.elements.modalShortcuts
+      this.elements.modalShortcuts,
+      this.elements.modalSupabase
     ].filter(Boolean).forEach(m => this.closeModal(m));
+  }
+
+  // ==========================================
+  // SUPABASE CLOUD DATABASE CONFIG & SYNC UI
+  // ==========================================
+
+  _initSupabaseUI() {
+    if (!this.elements.modalSupabase) return;
+
+    if (this.elements.btnOpenSupabaseModal) {
+      this.elements.btnOpenSupabaseModal.addEventListener('click', () => {
+        this._vibrate(8);
+        if (this.elements.userProfileWidget) {
+          this.elements.userProfileWidget.classList.remove('open');
+        }
+        // Pre-fill values
+        if (typeof SUPABASE_CONFIG !== 'undefined') {
+          this.elements.inputSupabaseUrl.value = SUPABASE_CONFIG.url || '';
+          this.elements.inputSupabaseKey.value = SUPABASE_CONFIG.anonKey || '';
+        }
+        if (this.elements.supabaseStatusAlert) {
+          this.elements.supabaseStatusAlert.style.display = 'none';
+        }
+        this.openModal(this.elements.modalSupabase);
+      });
+    }
+
+    if (this.elements.btnCloseSupabase) {
+      this.elements.btnCloseSupabase.addEventListener('click', () => {
+        this.closeModal(this.elements.modalSupabase);
+      });
+    }
+
+    // Test connection button
+    if (this.elements.btnTestSupabase) {
+      this.elements.btnTestSupabase.addEventListener('click', async () => {
+        this._vibrate(8);
+        const url = (this.elements.inputSupabaseUrl.value || '').trim();
+        const key = (this.elements.inputSupabaseKey.value || '').trim();
+        if (!url || !key) {
+          this._setSupabaseAlert('Please enter both Supabase URL and Anon Key.', 'error');
+          return;
+        }
+
+        this._setSupabaseAlert('Testing connection to Supabase...', 'info');
+        auraSupabase.init({ url, anonKey: key });
+        const res = await auraSupabase.testConnection();
+        if (res.success) {
+          this._setSupabaseAlert('✅ Successfully connected to Supabase!', 'success');
+        } else {
+          this._setSupabaseAlert(`❌ Connection failed: ${res.message}`, 'error');
+        }
+      });
+    }
+
+    // Sync 1,000+ quotes to Cloud
+    if (this.elements.btnSyncQuotesToCloud) {
+      this.elements.btnSyncQuotesToCloud.addEventListener('click', async () => {
+        this._vibrate(10);
+        const url = (this.elements.inputSupabaseUrl.value || '').trim();
+        const key = (this.elements.inputSupabaseKey.value || '').trim();
+        if (!url || !key) {
+          this._setSupabaseAlert('Please save connection credentials first.', 'error');
+          return;
+        }
+
+        auraSupabase.init({ url, anonKey: key });
+        this._setSupabaseAlert('⏳ Syncing quotes to Supabase...', 'info');
+
+        const all = await auraDB.getAllQuotes();
+        const result = await auraSupabase.syncBatchQuotes(all, (synced, total) => {
+          this._setSupabaseAlert(`⏳ Syncing quotes: ${synced}/${total} uploaded...`, 'info');
+        });
+
+        if (result.success) {
+          this._setSupabaseAlert(`🎉 Successfully synced ${result.synced} quotes to Supabase!`, 'success');
+          this.showToast('☁️ 1,071 Quotes synced to Supabase Cloud!', 'success');
+          this._triggerConfetti();
+        } else {
+          this._setSupabaseAlert(`❌ Sync incomplete: ${result.error}`, 'error');
+        }
+      });
+    }
+
+    // Save & Connect Form
+    if (this.elements.formSupabaseConfig) {
+      this.elements.formSupabaseConfig.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const url = (this.elements.inputSupabaseUrl.value || '').trim();
+        const key = (this.elements.inputSupabaseKey.value || '').trim();
+
+        try {
+          localStorage.setItem('aura_supabase_url', url);
+          localStorage.setItem('aura_supabase_anon_key', key);
+          if (typeof SUPABASE_CONFIG !== 'undefined') {
+            SUPABASE_CONFIG.url = url;
+            SUPABASE_CONFIG.anonKey = key;
+          }
+          auraSupabase.init({ url, anonKey: key });
+          auraDB.supabaseEnabled = auraSupabase.isConfigured();
+          this.closeModal(this.elements.modalSupabase);
+          this.showToast('☁️ Supabase cloud connection saved!', 'success');
+        } catch (err) {
+          this._setSupabaseAlert('Failed to save credentials: ' + err.message, 'error');
+        }
+      });
+    }
+  }
+
+  _setSupabaseAlert(msg, type = 'info') {
+    const el = this.elements.supabaseStatusAlert;
+    if (!el) return;
+    el.style.display = 'block';
+    el.textContent = msg;
+    if (type === 'success') {
+      el.style.background = 'rgba(16, 185, 129, 0.15)';
+      el.style.color = '#10b981';
+      el.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+    } else if (type === 'error') {
+      el.style.background = 'rgba(239, 68, 68, 0.15)';
+      el.style.color = '#ef4444';
+      el.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+    } else {
+      el.style.background = 'rgba(59, 130, 246, 0.15)';
+      el.style.color = '#3b82f6';
+      el.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+    }
   }
 
   // ==========================================
@@ -773,7 +912,9 @@ class AuraApp {
 
   async toggleFavorite() {
     if (!this.currentQuote) return;
-    const isNowFav = await auraDB.toggleFavorite(this.currentQuote.id);
+    const user = typeof auraAuth !== 'undefined' ? auraAuth.getUser() : null;
+    const userUid = user ? user.uid : null;
+    const isNowFav = await auraDB.toggleFavorite(this.currentQuote.id, userUid);
     this._updateFavoriteButton(isNowFav);
 
     if (isNowFav) {
