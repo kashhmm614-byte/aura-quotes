@@ -41,10 +41,11 @@ const server = http.createServer((req, res) => {
 
   const filePath = path.join(ROOT_DIR, reqPath);
 
-  // Security check: ensure path is within ROOT_DIR
-  if (!filePath.startsWith(ROOT_DIR)) {
-    res.writeHead(403);
-    res.end('Access Denied');
+  // Security check: ensure path is within ROOT_DIR and prevent dotfile access
+  const relative = path.relative(ROOT_DIR, filePath);
+  if (!filePath.startsWith(ROOT_DIR) || relative.split(path.sep).some(part => part.startsWith('.'))) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('403 Forbidden');
     return;
   }
 

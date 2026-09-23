@@ -9,6 +9,10 @@ npm-debug.log*
 scratch/
 .agents/
 
+# Environment Variables
+.env
+.env*.local
+
 # OS metadata
 .DS_Store
 Thumbs.db

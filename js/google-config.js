@@ -12,8 +12,7 @@
 // ============================================================================
 
 const GOOGLE_CONFIG = {
-  // e.g. "123456789012-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com"
-  clientId: ''
+  clientId: '1046400810342-demelk19ae49o62p58d1v2vggqtr7en5.apps.googleusercontent.com'
 };
 
 // Allow runtime override from browser localStorage
