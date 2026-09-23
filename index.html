@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="midnight">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="description" content="AuraQuote - Dynamic daily quotes application with 24-hour auto-refresh cycle, persistent database, and unique quote creation.">
+  <meta name="theme-color" content="#090B10">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>AuraQuote • Daily Inspirational Quotes & Generator</title>
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <!-- Ambient Atmosphere Glow & Interactive Stardust Canvas -->
+  <div class="ambient-glow" aria-hidden="true"></div>
+  <canvas id="ambientCanvas" class="ambient-canvas" aria-hidden="true"></canvas>
+  <canvas id="confettiCanvas" class="confetti-canvas" aria-hidden="true"></canvas>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <a href="#" class="brand" aria-label="AuraQuote Home">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+          <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+        </svg>
+      </div>
+      <span class="brand-title">AuraQuote</span>
+      <span class="brand-badge">Daily</span>
+    </a>
+
+    <div class="header-center">
+      <div class="streak-pill" id="streakPill" title="Your daily visit streak">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2c.5 1 1.5 2.5 1.5 4.5 0 2.5-2 4-2 6 0 1.5 1 3 2.5 3s2.5-1.5 2.5-3.5c0-3-2-4.5-2-4.5s4 1.5 4 6c0 4.4-3.6 8-8 8s-8-3.6-8-8c0-4 3.5-7 3.5-9.5 0-1.5-.5-2.5-.5-2.5s3 1.5 3 4c0 1 .5 2 1.5 2 1 0 1.5-1.5 1.5-2.5C9 3.5 11 2 12 2z"/>
+        </svg>
+        <span id="streakCount">1</span>
+        <span class="streak-text-label">Day Streak</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- Theme Switcher -->
+      <div class="theme-selector" role="group" aria-label="Visual Theme Switcher">
+        <button class="theme-btn active" data-theme-val="midnight" title="Midnight Velvet">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <button class="theme-btn" data-theme-val="nordic" title="Nordic Twilight">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        </button>
+        <button class="theme-btn" data-theme-val="sunset" title="Sunset Warmth">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="9" x2="12" y2="2"/><line x1="4.22" y1="10.22" x2="5.64" y2="11.64"/><line x1="1" y1="18" x2="3" y2="18"/><line x1="21" y1="18" x2="23" y2="18"/><line x1="18.36" y1="11.64" x2="19.78" y2="10.22"/><line x1="23" y1="22" x2="1" y2="22"/></svg>
+        </button>
+        <button class="theme-btn" data-theme-val="light" title="Editorial Light">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+        <button class="theme-btn" data-theme-val="emerald" title="Emerald Zen">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </button>
+      </div>
+
+      <!-- Quote Vault Button (Desktop) -->
+      <button class="btn-secondary desktop-only-action" id="btnOpenVault" title="Explore quote database and favorites">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+        <span class="btn-text-label">Vault</span>
+      </button>
+
+      <!-- Create Quote Button (Desktop) -->
+      <button class="btn-primary desktop-only-action" id="btnOpenCreate" title="Create your own quote">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span class="btn-text-label">Create</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main View -->
+  <main class="app-main">
+    <section class="quote-showcase">
+      <article class="quote-card" id="quoteCard">
+        <!-- Giant Decorative Quote Mark -->
+        <span class="quote-mark" aria-hidden="true">“</span>
+
+        <!-- Header Row: Daily Tag + Midnight Countdown -->
+        <div class="card-header-row">
+          <div class="badge-daily" id="quoteModeBadge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="12" r="10"/>
+            </svg>
+            <span id="badgeModeText">Quote of the Day</span>
+          </div>
+
+          <div class="countdown-wrap" title="Daily Quote automatically refreshes at midnight">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span>Resets in: <span class="countdown-timer" id="countdownTimer">--:--:--</span></span>
+          </div>
+        </div>
+
+        <!-- Quote Body -->
+        <div class="quote-content">
+          <blockquote class="quote-text" id="quoteText">
+            "Loading your daily inspiration..."
+          </blockquote>
+        </div>
+
+        <!-- Author & Tags -->
+        <div class="quote-attribution">
+          <div class="author-info">
+            <span class="author-name" id="quoteAuthor">— Seneca</span>
+            <span class="quote-category-tag" id="quoteCategory">Stoicism</span>
+          </div>
+          <div class="tags-list" id="quoteTags">
+            <!-- Dynamically populated tags -->
+          </div>
+        </div>
+
+        <!-- Action Toolbar -->
+        <div class="card-actions">
+          <div class="action-group">
+            <!-- Speech Audio Button with Animated Waveform -->
+            <button class="icon-btn" id="btnSpeak" title="Listen to quote (Read aloud)" aria-label="Listen to quote">
+              <span class="icon-svg-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                </svg>
+              </span>
+              <span class="speech-waves" id="speechWaves" aria-hidden="true">
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+              </span>
+            </button>
+
+            <!-- Copy to Clipboard -->
+            <button class="icon-btn" id="btnCopy" title="Copy quote text" aria-label="Copy quote text">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </button>
+
+            <!-- Export Image Card -->
+            <button class="icon-btn" id="btnExportImage" title="Download aesthetic poster (PNG)" aria-label="Download quote poster">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+            </button>
+
+            <!-- Native Share -->
+            <button class="icon-btn" id="btnShare" title="Share quote" aria-label="Share quote">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="5" r="3"/>
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="action-group">
+            <!-- Favorite Bookmark -->
+            <button class="icon-btn" id="btnFavorite" title="Save to favorites" aria-label="Save to favorites">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <!-- Mobile Gesture Swipe Hint -->
+      <div class="card-swipe-hint" id="cardSwipeHint" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>Swipe card left or right to explore</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+    </section>
+
+    <!-- Exploration & Generation Controls -->
+    <section class="discovery-bar">
+      <!-- Generate Next Unique Quote -->
+      <button class="btn-generate" id="btnGenerateNext">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/>
+          <polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        <span>Generate New Quote</span>
+      </button>
+
+      <!-- Category Filter Chips -->
+      <div class="category-chips" id="categoryChips">
+        <button class="chip-btn active" data-category="all">All</button>
+        <button class="chip-btn" data-category="Romance">Romance ❤️</button>
+        <button class="chip-btn" data-category="Stoicism">Stoicism 🏛️</button>
+        <button class="chip-btn" data-category="Mindfulness">Mindfulness 🍃</button>
+        <button class="chip-btn" data-category="Motivation">Motivation ⚡</button>
+        <button class="chip-btn" data-category="Wisdom">Wisdom 🦉</button>
+        <button class="chip-btn" data-category="Philosophy">Philosophy 📜</button>
+        <button class="chip-btn" data-category="Innovation">Innovation 💡</button>
+        <button class="chip-btn" data-category="Poetry & Art">Poetry & Art 🎨</button>
+        <button class="chip-btn" data-category="Courage">Courage 🦁</button>
+      </div>
+
+      <!-- Desktop Keyboard Hint -->
+      <button class="keyboard-hint" id="btnOpenShortcuts" title="View all keyboard shortcuts">
+        <span>Press</span> <kbd>Space</kbd> <span>for New</span>
+        <span>•</span> <kbd>C</kbd> <span>to Copy</span>
+        <span>•</span> <kbd>L</kbd> <span>to Listen</span>
+        <span>•</span> <kbd>?</kbd> <span>all shortcuts</span>
+      </button>
+    </section>
+  </main>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="mobile-bottom-bar" aria-label="Mobile Navigation">
+    <button class="mobile-nav-item active" id="mobileNavToday">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <span>Daily</span>
+    </button>
+    <button class="mobile-nav-item" id="mobileNavGenerate">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+      <span>Explore</span>
+    </button>
+    <button class="mobile-nav-item" id="mobileNavCreate">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <span>Create</span>
+    </button>
+    <button class="mobile-nav-item" id="mobileNavVault">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <span>Vault</span>
+    </button>
+  </nav>
+
+  <!-- Create Quote Modal -->
+  <div class="modal-overlay" id="modalCreate" role="dialog" aria-modal="true" aria-labelledby="modalCreateTitle">
+    <div class="modal-card">
+      <div class="bottom-sheet-handle" aria-hidden="true"></div>
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalCreateTitle">Create a Quote</h2>
+        <button class="btn-close" id="btnCloseCreate" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="formCreateQuote">
+        <div class="form-group">
+          <label class="form-label" for="inputQuoteText">Quote Words *</label>
+          <textarea class="form-textarea" id="inputQuoteText" placeholder="Write something profound or inspiring..." required maxlength="400"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="inputAuthor">Author</label>
+            <input type="text" class="form-input" id="inputAuthor" placeholder="e.g. Maya Angelou, You" maxlength="80">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="selectCategory">Category</label>
+            <select class="form-select" id="selectCategory">
+              <option value="Wisdom">Wisdom</option>
+              <option value="Romance">Romance</option>
+              <option value="Stoicism">Stoicism</option>
+              <option value="Mindfulness">Mindfulness</option>
+              <option value="Motivation">Motivation</option>
+              <option value="Philosophy">Philosophy</option>
+              <option value="Innovation">Innovation</option>
+              <option value="Poetry & Art">Poetry & Art</option>
+              <option value="Courage">Courage</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputTags">Tags (Comma-separated)</label>
+          <input type="text" class="form-input" id="inputTags" placeholder="inspiration, growth, purpose">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Card Atmosphere Mood</label>
+          <div class="category-chips">
+            <button type="button" class="chip-btn active" data-mood="midnight">Midnight</button>
+            <button type="button" class="chip-btn" data-mood="nordic">Nordic</button>
+            <button type="button" class="chip-btn" data-mood="sunset">Sunset</button>
+            <button type="button" class="chip-btn" data-mood="light">Editorial Light</button>
+            <button type="button" class="chip-btn" data-mood="emerald">Emerald Zen</button>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: var(--space-sm); justify-content: flex-end; margin-top: var(--space-lg);">
+          <button type="button" class="btn-secondary" id="btnCancelCreate">Cancel</button>
+          <button type="submit" class="btn-primary">Save to Database</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Quote Vault Modal -->
+  <div class="modal-overlay" id="modalVault" role="dialog" aria-modal="true" aria-labelledby="modalVaultTitle">
+    <div class="modal-card">
+      <div class="bottom-sheet-handle" aria-hidden="true"></div>
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalVaultTitle">Quote Vault</h2>
+        <button class="btn-close" id="btnCloseVault" aria-label="Close vault">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Vault Tabs -->
+      <div class="vault-tabs" role="tablist">
+        <button class="vault-tab active" data-vault-tab="all" role="tab">All Quotes (<span id="countAll">0</span>)</button>
+        <button class="vault-tab" data-vault-tab="favorites" role="tab">Favorites (<span id="countFav">0</span>)</button>
+        <button class="vault-tab" data-vault-tab="custom" role="tab">My Created (<span id="countCustom">0</span>)</button>
+      </div>
+
+      <!-- Search Input -->
+      <div class="vault-search-row">
+        <input type="search" class="form-input" id="inputVaultSearch" placeholder="Search quotes by author, text, or tags...">
+      </div>
+
+      <!-- Quotes List -->
+      <div class="vault-list" id="vaultList">
+        <!-- Rendered items -->
+      </div>
+
+      <!-- Backup Actions -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-md); padding-top: var(--space-sm); border-top: 1px solid var(--border-subtle);">
+        <button class="btn-secondary" id="btnExportBackup" style="font-size: 0.75rem; padding: 6px 12px;">Export JSON Backup</button>
+        <label class="btn-secondary" style="font-size: 0.75rem; padding: 6px 12px; cursor: pointer;">
+          Import Backup
+          <input type="file" id="inputImportBackup" accept=".json" style="display: none;">
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Poster Format Modal -->
+  <div class="modal-overlay" id="modalExport" role="dialog" aria-modal="true" aria-labelledby="modalExportTitle">
+    <div class="modal-card modal-card-sm">
+      <div class="bottom-sheet-handle" aria-hidden="true"></div>
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalExportTitle">Export Aesthetic Poster</h2>
+        <button class="btn-close" id="btnCloseExport" aria-label="Close export dialog">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <p class="modal-subtitle">Select your canvas ratio for Instagram, WhatsApp status, or wallpaper:</p>
+
+      <div class="format-grid">
+        <div class="format-card active" data-format="square">
+          <div class="format-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          </div>
+          <div class="format-info">
+            <span class="format-name">Square</span>
+            <span class="format-res">1080 × 1080 • 1:1</span>
+          </div>
+          <span class="format-badge">Instagram / Feed</span>
+        </div>
+
+        <div class="format-card" data-format="story">
+          <div class="format-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/></svg>
+          </div>
+          <div class="format-info">
+            <span class="format-name">Story & Status</span>
+            <span class="format-res">1080 × 1920 • 9:16</span>
+          </div>
+          <span class="format-badge">Status / Wallpaper</span>
+        </div>
+
+        <div class="format-card" data-format="landscape">
+          <div class="format-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
+          </div>
+          <div class="format-info">
+            <span class="format-name">Landscape</span>
+            <span class="format-res">1920 × 1080 • 16:9</span>
+          </div>
+          <span class="format-badge">Twitter / Desktop</span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: var(--space-sm); justify-content: flex-end; margin-top: var(--space-lg);">
+        <button type="button" class="btn-secondary" id="btnCancelExport">Cancel</button>
+        <button type="button" class="btn-primary" id="btnConfirmExport">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Download Poster</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard Shortcuts Cheatsheet Modal -->
+  <div class="modal-overlay" id="modalShortcuts" role="dialog" aria-modal="true" aria-labelledby="modalShortcutsTitle">
+    <div class="modal-card modal-card-sm">
+      <div class="bottom-sheet-handle" aria-hidden="true"></div>
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalShortcutsTitle">Keyboard Shortcuts</h2>
+        <button class="btn-close" id="btnCloseShortcuts" aria-label="Close shortcuts dialog">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="shortcuts-list">
+        <div class="shortcut-item"><span>Next Unique Quote</span> <kbd>Space</kbd></div>
+        <div class="shortcut-item"><span>Copy Quote to Clipboard</span> <kbd>C</kbd></div>
+        <div class="shortcut-item"><span>Listen / Stop Narration</span> <kbd>L</kbd></div>
+        <div class="shortcut-item"><span>Export Poster Image</span> <kbd>P</kbd></div>
+        <div class="shortcut-item"><span>Toggle Favorite</span> <kbd>F</kbd></div>
+        <div class="shortcut-item"><span>Create New Quote</span> <kbd>N</kbd></div>
+        <div class="shortcut-item"><span>Open Quote Vault</span> <kbd>V</kbd></div>
+        <div class="shortcut-item"><span>Close Any Dialog</span> <kbd>Esc</kbd></div>
+        <div class="shortcut-item"><span>Show Shortcuts Help</span> <kbd>?</kbd></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Application Scripts -->
+  <script src="js/quotes-data.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/canvas-export.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
