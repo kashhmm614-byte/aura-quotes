@@ -40,11 +40,11 @@ class AuraApp {
       this.elements.modalVault,
       this.elements.modalExport,
       this.elements.modalShortcuts,
-      this.elements.modalSupabase
+      this.elements.modalNeon
     ].filter(Boolean).forEach(m => this._bindBottomSheetDrag(m));
 
     this._initTheme();
-    this._initSupabaseUI();
+    this._initNeonUI();
 
     // Initialize Database
     try {
@@ -113,15 +113,14 @@ class AuraApp {
       modalVault: document.getElementById('modalVault'),
       modalExport: document.getElementById('modalExport'),
       modalShortcuts: document.getElementById('modalShortcuts'),
-      modalSupabase: document.getElementById('modalSupabase'),
-      btnOpenSupabaseModal: document.getElementById('btnOpenSupabaseModal'),
-      btnCloseSupabase: document.getElementById('btnCloseSupabase'),
-      formSupabaseConfig: document.getElementById('formSupabaseConfig'),
-      inputSupabaseUrl: document.getElementById('inputSupabaseUrl'),
-      inputSupabaseKey: document.getElementById('inputSupabaseKey'),
-      btnTestSupabase: document.getElementById('btnTestSupabase'),
-      btnSyncQuotesToCloud: document.getElementById('btnSyncQuotesToCloud'),
-      supabaseStatusAlert: document.getElementById('supabaseStatusAlert'),
+      modalNeon: document.getElementById('modalNeon') || document.getElementById('modalSupabase'),
+      btnOpenNeonModal: document.getElementById('btnOpenNeonModal') || document.getElementById('btnOpenSupabaseModal'),
+      btnCloseNeon: document.getElementById('btnCloseNeon') || document.getElementById('btnCloseSupabase'),
+      formNeonConfig: document.getElementById('formNeonConfig') || document.getElementById('formSupabaseConfig'),
+      inputNeonUrl: document.getElementById('inputNeonUrl'),
+      btnTestNeon: document.getElementById('btnTestNeon'),
+      btnSyncQuotesToNeon: document.getElementById('btnSyncQuotesToNeon'),
+      neonStatusAlert: document.getElementById('neonStatusAlert') || document.getElementById('supabaseStatusAlert'),
       btnOpenCreate: document.getElementById('btnOpenCreate'),
       btnCloseCreate: document.getElementById('btnCloseCreate'),
       btnCancelCreate: document.getElementById('btnCancelCreate'),
@@ -369,6 +368,7 @@ class AuraApp {
         if (user) {
           this._hideAuthGate();
           this._renderUserProfile(user);
+          this._syncUserToNeon(user);
         } else {
           this._showAuthGate();
           this._clearUserProfile();
@@ -383,6 +383,7 @@ class AuraApp {
         const user = auraAuth.loginWithDemo();
         this.showToast(`✨ Welcome, ${user.givenName}! Assigned 10-Digit UID: ${user.uid}`, 'success');
         this._triggerConfetti();
+        this._syncUserToNeon(user);
       });
     }
 
@@ -451,6 +452,18 @@ class AuraApp {
     }
   }
 
+  async _syncUserToNeon(user) {
+    if (!user || !user.uid || typeof auraNeon === 'undefined') return;
+    try {
+      const ok = await auraNeon.syncUser(user);
+      if (ok) {
+        console.info(`Neon: user ${user.uid} synced`);
+      }
+    } catch (e) {
+      console.warn('Neon user sync failed:', e.message);
+    }
+  }
+
   _hideAuthGate() {
     if (this.elements.authGate) {
       this.elements.authGate.classList.remove('active');
@@ -513,134 +526,119 @@ class AuraApp {
       this.elements.modalVault,
       this.elements.modalExport,
       this.elements.modalShortcuts,
-      this.elements.modalSupabase
+      this.elements.modalNeon
     ].filter(Boolean).forEach(m => this.closeModal(m));
   }
 
   // ==========================================
-  // SUPABASE CLOUD DATABASE CONFIG & SYNC UI
+  // NEON SERVERLESS POSTGRES CONFIG & SYNC UI
   // ==========================================
 
-  _initSupabaseUI() {
-    if (!this.elements.modalSupabase) return;
+  _initNeonUI() {
+    if (!this.elements.modalNeon) return;
 
-    if (this.elements.btnOpenSupabaseModal) {
-      this.elements.btnOpenSupabaseModal.addEventListener('click', () => {
+    if (this.elements.btnOpenNeonModal) {
+      this.elements.btnOpenNeonModal.addEventListener('click', async () => {
         this._vibrate(8);
         if (this.elements.userProfileWidget) {
           this.elements.userProfileWidget.classList.remove('open');
         }
-        // Pre-fill values
-        if (typeof SUPABASE_CONFIG !== 'undefined') {
-          this.elements.inputSupabaseUrl.value = SUPABASE_CONFIG.url || '';
-          this.elements.inputSupabaseKey.value = SUPABASE_CONFIG.anonKey || '';
+        if (this.elements.neonStatusAlert) {
+          this.elements.neonStatusAlert.style.display = 'none';
         }
-        if (this.elements.supabaseStatusAlert) {
-          this.elements.supabaseStatusAlert.style.display = 'none';
+        // Check current status
+        if (window.auraNeon) {
+          await auraNeon.init();
+          if (auraNeon.isConfigured && auraNeon.maskedUrl) {
+            this._setNeonAlert(`Connected to Neon Postgres (${auraNeon.maskedUrl})`, 'success');
+          }
         }
-        this.openModal(this.elements.modalSupabase);
+        this.openModal(this.elements.modalNeon);
       });
     }
 
-    if (this.elements.btnCloseSupabase) {
-      this.elements.btnCloseSupabase.addEventListener('click', () => {
-        this.closeModal(this.elements.modalSupabase);
+    if (this.elements.btnCloseNeon) {
+      this.elements.btnCloseNeon.addEventListener('click', () => {
+        this.closeModal(this.elements.modalNeon);
       });
     }
 
     // Test connection button
-    if (this.elements.btnTestSupabase) {
-      this.elements.btnTestSupabase.addEventListener('click', async () => {
+    if (this.elements.btnTestNeon) {
+      this.elements.btnTestNeon.addEventListener('click', async () => {
         this._vibrate(8);
-        const url = (this.elements.inputSupabaseUrl.value || '').trim();
-        const key = (this.elements.inputSupabaseKey.value || '').trim();
-        if (!url || !key) {
-          this._setSupabaseAlert('Please enter both Supabase URL and Anon Key.', 'error');
-          return;
-        }
+        const url = (this.elements.inputNeonUrl?.value || '').trim();
+        this._setNeonAlert('⏳ Testing connection to Neon Console...', 'info');
 
-        this._setSupabaseAlert('Testing connection to Supabase...', 'info');
-        auraSupabase.init({ url, anonKey: key });
-        const res = await auraSupabase.testConnection();
+        const res = await auraNeon.testConnection(url);
         if (res.success) {
-          this._setSupabaseAlert('✅ Successfully connected to Supabase!', 'success');
+          const tableInfo = res.tables && res.tables.length > 0 
+            ? `Tables found: ${res.tables.join(', ')} (${res.quoteCount} quotes)`
+            : 'Database reachable! (Run neon-schema.sql to create tables)';
+          this._setNeonAlert(`✅ ${res.message}<br><small>${tableInfo}</small>`, 'success');
         } else {
-          this._setSupabaseAlert(`❌ Connection failed: ${res.message}`, 'error');
+          this._setNeonAlert(`❌ Connection failed: ${res.message}`, 'error');
         }
       });
     }
 
-    // Sync 1,000+ quotes to Cloud
-    if (this.elements.btnSyncQuotesToCloud) {
-      this.elements.btnSyncQuotesToCloud.addEventListener('click', async () => {
+    // Sync 1,000+ quotes to Neon
+    if (this.elements.btnSyncQuotesToNeon) {
+      this.elements.btnSyncQuotesToNeon.addEventListener('click', async () => {
         this._vibrate(10);
-        const url = (this.elements.inputSupabaseUrl.value || '').trim();
-        const key = (this.elements.inputSupabaseKey.value || '').trim();
-        if (!url || !key) {
-          this._setSupabaseAlert('Please save connection credentials first.', 'error');
-          return;
-        }
-
-        auraSupabase.init({ url, anonKey: key });
-        this._setSupabaseAlert('⏳ Syncing quotes to Supabase...', 'info');
+        this._setNeonAlert('⏳ Syncing quotes to Neon Serverless Postgres...', 'info');
 
         const all = await auraDB.getAllQuotes();
-        const result = await auraSupabase.syncBatchQuotes(all, (synced, total) => {
-          this._setSupabaseAlert(`⏳ Syncing quotes: ${synced}/${total} uploaded...`, 'info');
+        const result = await auraNeon.syncAllQuotes(all, (synced, total, msg) => {
+          this._setNeonAlert(`⏳ ${msg || `Syncing quotes: ${synced}/${total}...`}`, 'info');
         });
 
         if (result.success) {
-          this._setSupabaseAlert(`🎉 Successfully synced ${result.synced} quotes to Supabase!`, 'success');
-          this.showToast('☁️ 1,071 Quotes synced to Supabase Cloud!', 'success');
+          this._setNeonAlert(`🎉 ${result.message}`, 'success');
+          this.showToast('🐘 1,071 Quotes synced to Neon Cloud Database!', 'success');
           this._triggerConfetti();
         } else {
-          this._setSupabaseAlert(`❌ Sync incomplete: ${result.error}`, 'error');
+          this._setNeonAlert(`❌ Sync incomplete: ${result.message}`, 'error');
         }
       });
     }
 
     // Save & Connect Form
-    if (this.elements.formSupabaseConfig) {
-      this.elements.formSupabaseConfig.addEventListener('submit', (e) => {
+    if (this.elements.formNeonConfig) {
+      this.elements.formNeonConfig.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const url = (this.elements.inputSupabaseUrl.value || '').trim();
-        const key = (this.elements.inputSupabaseKey.value || '').trim();
+        const url = (this.elements.inputNeonUrl?.value || '').trim();
+        if (!url) return;
 
-        try {
-          localStorage.setItem('aura_supabase_url', url);
-          localStorage.setItem('aura_supabase_anon_key', key);
-          if (typeof SUPABASE_CONFIG !== 'undefined') {
-            SUPABASE_CONFIG.url = url;
-            SUPABASE_CONFIG.anonKey = key;
-          }
-          auraSupabase.init({ url, anonKey: key });
-          auraDB.supabaseEnabled = auraSupabase.isConfigured();
-          this.closeModal(this.elements.modalSupabase);
-          this.showToast('☁️ Supabase cloud connection saved!', 'success');
-        } catch (err) {
-          this._setSupabaseAlert('Failed to save credentials: ' + err.message, 'error');
+        this._setNeonAlert('⏳ Saving and verifying Neon connection...', 'info');
+        const res = await auraNeon.saveConfig(url);
+        if (res.success) {
+          this.showToast('🐘 Neon database connected successfully!', 'success');
+          this.closeModal(this.elements.modalNeon);
+        } else {
+          this._setNeonAlert(`❌ Could not save: ${res.message}`, 'error');
         }
       });
     }
   }
 
-  _setSupabaseAlert(msg, type = 'info') {
-    const el = this.elements.supabaseStatusAlert;
+  _setNeonAlert(msg, type = 'info') {
+    const el = this.elements.neonStatusAlert;
     if (!el) return;
     el.style.display = 'block';
-    el.textContent = msg;
-    if (type === 'success') {
-      el.style.background = 'rgba(16, 185, 129, 0.15)';
-      el.style.color = '#10b981';
-      el.style.border = '1px solid rgba(16, 185, 129, 0.3)';
-    } else if (type === 'error') {
+    el.innerHTML = msg;
+    if (type === 'error') {
       el.style.background = 'rgba(239, 68, 68, 0.15)';
-      el.style.color = '#ef4444';
+      el.style.color = '#fca5a5';
       el.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+    } else if (type === 'success') {
+      el.style.background = 'rgba(16, 185, 129, 0.15)';
+      el.style.color = '#6ee7b7';
+      el.style.border = '1px solid rgba(16, 185, 129, 0.3)';
     } else {
-      el.style.background = 'rgba(59, 130, 246, 0.15)';
-      el.style.color = '#3b82f6';
-      el.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+      el.style.background = 'rgba(99, 102, 241, 0.15)';
+      el.style.color = '#c7d2fe';
+      el.style.border = '1px solid rgba(99, 102, 241, 0.3)';
     }
   }
 

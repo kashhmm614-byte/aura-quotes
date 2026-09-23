@@ -15,12 +15,16 @@ const GOOGLE_CONFIG = {
   clientId: '1046400810342-demelk19ae49o62p58d1v2vggqtr7en5.apps.googleusercontent.com'
 };
 
-// Allow runtime override from browser localStorage
+// Allow runtime override from browser localStorage (only if it looks like a valid Web Client ID)
 if (typeof window !== 'undefined') {
   try {
-    const savedClientId = localStorage.getItem('aura_google_client_id');
-    if (savedClientId && savedClientId.trim()) {
-      GOOGLE_CONFIG.clientId = savedClientId.trim();
+    const savedClientId = (localStorage.getItem('aura_google_client_id') || '').trim();
+    const validOverride = /^[\w-]+\.apps\.googleusercontent\.com$/.test(savedClientId);
+    if (validOverride && savedClientId !== GOOGLE_CONFIG.clientId) {
+      GOOGLE_CONFIG.clientId = savedClientId;
+    } else if (savedClientId && !validOverride) {
+      localStorage.removeItem('aura_google_client_id');
+      console.warn('Ignored invalid saved Google Client ID override.');
     }
   } catch (e) {
     console.warn('Could not read Google Client ID from localStorage:', e);

@@ -27,6 +27,16 @@ class AuraDB {
    * Initializes the database connection and seeds initial quotes.
    */
   async init() {
+    // Check for Neon Serverless Postgres Cloud connection
+    if (typeof auraNeon !== 'undefined') {
+      try {
+        await auraNeon.init();
+        if (auraNeon.isConfigured) {
+          console.log('🐘 AuraQuote: Neon Serverless Postgres adapter connected.');
+        }
+      } catch (e) {}
+    }
+
     // Check for Supabase Cloud connection
     if (typeof auraSupabase !== 'undefined') {
       this.supabaseEnabled = auraSupabase.init();
@@ -283,6 +293,9 @@ class AuraDB {
       data.quotes.unshift(newQuote);
       this._saveFallbackData(data);
       this.invalidateCache();
+      if (typeof auraNeon !== 'undefined') {
+        auraNeon.insertQuote(newQuote).catch(e => console.warn('Neon insert warning:', e));
+      }
       if (this.supabaseEnabled && typeof auraSupabase !== 'undefined') {
         auraSupabase.insertQuote(newQuote).catch(e => console.warn('Supabase insert warning:', e));
       }
@@ -291,6 +304,9 @@ class AuraDB {
 
     await this._put('quotes', newQuote);
     this.invalidateCache();
+    if (typeof auraNeon !== 'undefined') {
+      auraNeon.insertQuote(newQuote).catch(e => console.warn('Neon insert warning:', e));
+    }
     if (this.supabaseEnabled && typeof auraSupabase !== 'undefined') {
       auraSupabase.insertQuote(newQuote).catch(e => console.warn('Supabase insert warning:', e));
     }
@@ -507,6 +523,9 @@ class AuraDB {
       if (this.supabaseEnabled && typeof auraSupabase !== 'undefined' && userUid) {
         auraSupabase.removeFavorite(userUid, quoteId).catch(() => {});
       }
+      if (typeof auraNeon !== 'undefined' && auraNeon.isConfigured && userUid) {
+        auraNeon.syncFavorite(userUid, quoteId, 'remove').catch(() => {});
+      }
       return false;
     } else {
       const favObj = { quoteId, savedAt: Date.now() };
@@ -520,6 +539,9 @@ class AuraDB {
       }
       if (this.supabaseEnabled && typeof auraSupabase !== 'undefined' && userUid) {
         auraSupabase.addFavorite(userUid, quoteId).catch(() => {});
+      }
+      if (typeof auraNeon !== 'undefined' && auraNeon.isConfigured && userUid) {
+        auraNeon.syncFavorite(userUid, quoteId, 'add').catch(() => {});
       }
       return true;
     }
