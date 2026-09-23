@@ -376,7 +376,7 @@ class AuraApp {
       }
     });
 
-    // Instant Google Sign In (for testing & restricted origins)
+    // Fallback sign-in (only visible if official Google button fails to render)
     if (this.elements.btnGoogleInstant) {
       this.elements.btnGoogleInstant.addEventListener('click', () => {
         this._vibrate(15);

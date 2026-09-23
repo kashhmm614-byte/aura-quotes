@@ -236,11 +236,19 @@ class AuraAuth {
   _initGoogleGIS() {
     if (typeof window === 'undefined') return;
 
+    const instantBtn = document.getElementById('btnGoogleInstant');
+    const showFallback = () => {
+      if (instantBtn) instantBtn.hidden = false;
+    };
+
     const checkSDK = (attempts = 0) => {
       if (window.google && window.google.accounts && window.google.accounts.id) {
-        this._renderGoogleButton();
+        const rendered = this._renderGoogleButton();
+        if (!rendered) showFallback();
       } else if (attempts < 25) {
         setTimeout(() => checkSDK(attempts + 1), 200);
+      } else {
+        showFallback();
       }
     };
 
@@ -249,11 +257,13 @@ class AuraAuth {
 
   _renderGoogleButton() {
     const btnContainer = document.getElementById('googleBtnContainer');
-    if (!btnContainer || !window.google || !window.google.accounts) return;
+    if (!btnContainer || !window.google || !window.google.accounts) return false;
 
-    const clientId = this.clientId || (typeof GOOGLE_CONFIG !== 'undefined' ? GOOGLE_CONFIG.clientId : '');
+    const clientId = (typeof GOOGLE_CONFIG !== 'undefined' && GOOGLE_CONFIG.clientId)
+      ? GOOGLE_CONFIG.clientId
+      : this.clientId;
     if (!clientId) {
-      return;
+      return false;
     }
 
     try {
@@ -264,6 +274,7 @@ class AuraAuth {
         cancel_on_tap_outside: true
       });
 
+      btnContainer.innerHTML = '';
       window.google.accounts.id.renderButton(btnContainer, {
         theme: 'filled_black',
         size: 'large',
@@ -272,8 +283,10 @@ class AuraAuth {
         logo_alignment: 'left',
         width: 320
       });
+      return btnContainer.innerHTML.trim().length > 0;
     } catch (e) {
       console.warn('Google Identity button render note:', e);
+      return false;
     }
   }
 }

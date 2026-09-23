@@ -1368,6 +1368,10 @@ kbd {
   transition: all var(--transition-fast);
 }
 
+.btn-google-instant[hidden] {
+  display: none !important;
+}
+
 .btn-google-instant:hover {
   background: var(--bg-card-hover);
   border-color: var(--border-focus);
