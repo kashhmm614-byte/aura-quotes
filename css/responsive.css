@@ -60,6 +60,37 @@
     gap: 6px;
   }
 
+  /* User profile widget on mobile */
+  .user-meta.desktop-only {
+    display: none !important;
+  }
+
+  .user-pill-btn {
+    padding: 2px 4px 2px 2px;
+    gap: 2px;
+  }
+
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+
+  .user-dropdown-menu {
+    width: calc(100vw - 24px);
+    max-width: 290px;
+    right: -8px;
+  }
+
+  .auth-card {
+    padding: 28px 20px;
+    width: 95%;
+  }
+
+  .auth-title {
+    font-size: 1.35rem;
+  }
+
   .theme-selector {
     padding: 2px;
     gap: 1px;

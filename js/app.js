@@ -51,6 +51,9 @@ class AuraApp {
       console.error('Database initialization error:', e);
     }
 
+    // Setup Authentication & 10-Digit Member UID
+    this._initAuth();
+
     // Load Daily Quote
     await this.loadDailyQuote();
 
@@ -75,6 +78,24 @@ class AuraApp {
       badgeModeText: document.getElementById('badgeModeText'),
       countdownTimer: document.getElementById('countdownTimer'),
       streakCount: document.getElementById('streakCount'),
+
+      // Google Authentication & 10-Digit UID
+      authGate: document.getElementById('authGate'),
+      btnGoogleInstant: document.getElementById('btnGoogleInstant'),
+      userProfileWidget: document.getElementById('userProfileWidget'),
+      btnUserMenu: document.getElementById('btnUserMenu'),
+      userDropdownMenu: document.getElementById('userDropdownMenu'),
+      headerUserAvatar: document.getElementById('headerUserAvatar'),
+      headerUserInitials: document.getElementById('headerUserInitials'),
+      headerUserName: document.getElementById('headerUserName'),
+      headerUserUid: document.getElementById('headerUserUid'),
+      dropdownAvatar: document.getElementById('dropdownAvatar'),
+      dropdownInitials: document.getElementById('dropdownInitials'),
+      dropdownUserName: document.getElementById('dropdownUserName'),
+      dropdownUserEmail: document.getElementById('dropdownUserEmail'),
+      dropdownUidDisplay: document.getElementById('dropdownUidDisplay'),
+      btnCopyUid: document.getElementById('btnCopyUid'),
+      btnSignOut: document.getElementById('btnSignOut'),
 
       // Action Buttons
       btnSpeak: document.getElementById('btnSpeak'),
@@ -298,6 +319,11 @@ class AuraApp {
         return;
       }
 
+      // Block keyboard navigation if user is not authenticated
+      if (!auraAuth.isAuthenticated()) {
+        return;
+      }
+
       if (e.code === 'Space') {
         e.preventDefault();
         this.generateNextQuote();
@@ -320,6 +346,154 @@ class AuraApp {
         this._closeAllModals();
       }
     });
+  }
+
+  // ==========================================
+  // GOOGLE AUTHENTICATION & 10-DIGIT UID LOGIC
+  // ==========================================
+
+  _initAuth() {
+    auraAuth.init({
+      onUserChange: (user) => {
+        if (user) {
+          this._hideAuthGate();
+          this._renderUserProfile(user);
+        } else {
+          this._showAuthGate();
+          this._clearUserProfile();
+        }
+      }
+    });
+
+    // Instant Google Sign In (for testing & restricted origins)
+    if (this.elements.btnGoogleInstant) {
+      this.elements.btnGoogleInstant.addEventListener('click', () => {
+        this._vibrate(15);
+        const user = auraAuth.loginWithDemo();
+        this.showToast(`✨ Welcome, ${user.givenName}! Assigned 10-Digit UID: ${user.uid}`, 'success');
+        this._triggerConfetti();
+      });
+    }
+
+    // Toggle User Profile Dropdown
+    if (this.elements.btnUserMenu) {
+      this.elements.btnUserMenu.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._vibrate(8);
+        const isOpen = this.elements.userProfileWidget.classList.toggle('open');
+        this.elements.btnUserMenu.setAttribute('aria-expanded', String(isOpen));
+      });
+    }
+
+    // Close Dropdown on outside click
+    document.addEventListener('click', (e) => {
+      if (this.elements.userProfileWidget && !this.elements.userProfileWidget.contains(e.target)) {
+        this.elements.userProfileWidget.classList.remove('open');
+        if (this.elements.btnUserMenu) {
+          this.elements.btnUserMenu.setAttribute('aria-expanded', 'false');
+        }
+      }
+    });
+
+    // Copy 10-Digit UID from Dropdown
+    if (this.elements.btnCopyUid) {
+      this.elements.btnCopyUid.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        this._vibrate(10);
+        const ok = await auraAuth.copyUID();
+        if (ok) {
+          const user = auraAuth.getUser();
+          this.showToast(`📋 Copied 10-digit UID: ${user ? user.uid : ''}`, 'success');
+        }
+      });
+    }
+
+    // Clicking UID Badge in Header also copies it
+    if (this.elements.headerUserUid) {
+      this.elements.headerUserUid.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        this._vibrate(10);
+        const ok = await auraAuth.copyUID();
+        if (ok) {
+          const user = auraAuth.getUser();
+          this.showToast(`📋 Copied UID: ${user ? user.uid : ''}`, 'success');
+        }
+      });
+    }
+
+    // Sign Out Button
+    if (this.elements.btnSignOut) {
+      this.elements.btnSignOut.addEventListener('click', () => {
+        this._vibrate(12);
+        if (this.elements.userProfileWidget) {
+          this.elements.userProfileWidget.classList.remove('open');
+        }
+        auraAuth.signOut();
+        this.showToast('You have signed out.', 'info');
+      });
+    }
+  }
+
+  _showAuthGate() {
+    if (this.elements.authGate) {
+      this.elements.authGate.classList.add('active');
+    }
+  }
+
+  _hideAuthGate() {
+    if (this.elements.authGate) {
+      this.elements.authGate.classList.remove('active');
+    }
+  }
+
+  _renderUserProfile(user) {
+    if (!user) return;
+
+    const uidStr = String(user.uid);
+
+    if (this.elements.headerUserName) {
+      this.elements.headerUserName.textContent = user.givenName || user.name || 'Member';
+    }
+    if (this.elements.headerUserUid) {
+      this.elements.headerUserUid.textContent = `UID: ${uidStr}`;
+    }
+    if (this.elements.dropdownUserName) {
+      this.elements.dropdownUserName.textContent = user.name || 'Member';
+    }
+    if (this.elements.dropdownUserEmail) {
+      this.elements.dropdownUserEmail.textContent = user.email || 'Google Account';
+    }
+    if (this.elements.dropdownUidDisplay) {
+      this.elements.dropdownUidDisplay.textContent = uidStr;
+    }
+
+    const initials = (user.name || 'A').charAt(0).toUpperCase();
+
+    if (user.picture) {
+      if (this.elements.headerUserAvatar) {
+        this.elements.headerUserAvatar.innerHTML = `<img src="${user.picture}" alt="${user.name}" referrerpolicy="no-referrer">`;
+      }
+      if (this.elements.dropdownAvatar) {
+        this.elements.dropdownAvatar.innerHTML = `<img src="${user.picture}" alt="${user.name}" referrerpolicy="no-referrer">`;
+      }
+    } else {
+      if (this.elements.headerUserAvatar) {
+        this.elements.headerUserAvatar.innerHTML = `<span>${initials}</span>`;
+      }
+      if (this.elements.dropdownAvatar) {
+        this.elements.dropdownAvatar.innerHTML = `<span>${initials}</span>`;
+      }
+    }
+
+    if (this.elements.userProfileWidget) {
+      this.elements.userProfileWidget.style.display = 'block';
+    }
+  }
+
+  _clearUserProfile() {
+    if (this.elements.userProfileWidget) {
+      this.elements.userProfileWidget.style.display = 'none';
+    }
   }
 
   _closeAllModals() {
@@ -355,6 +529,11 @@ class AuraApp {
   }
 
   async generateNextQuote() {
+    if (!auraAuth.isAuthenticated()) {
+      this._showAuthGate();
+      return;
+    }
+
     const freshQuote = await auraDB.getFreshUniqueQuote(
       this.currentQuote ? this.currentQuote.id : null,
       this.activeCategory
