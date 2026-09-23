@@ -1,0 +1,19 @@
+{
+  "name": "aura-quotes",
+  "version": "1.0.0",
+  "description": "Editorial daily inspirational quotes web application with 1,000+ curated quotes, IndexedDB storage, and audio narration.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "quotes",
+    "inspiration",
+    "indexeddb",
+    "responsive",
+    "web-app"
+  ],
+  "author": "kashhmm614-byte",
+  "license": "MIT"
+}
