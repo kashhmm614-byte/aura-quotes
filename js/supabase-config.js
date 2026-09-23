@@ -6,10 +6,10 @@
 // ============================================================================
 
 const SUPABASE_CONFIG = {
-  // Your Supabase Project URL (e.g. "https://xxxxxxxxxxxx.supabase.co")
-  url: '',
+  // Your Supabase Project URL
+  url: 'https://txafnhszxtdbqxnizbez.supabase.co',
 
-  // Your Supabase Anon/Public API Key (e.g. "eyJhbGciOiJIUzI1NiIsInR5cCI...")
+  // Your Supabase Anon/Public API Key (Copy from Supabase Dashboard -> Project Settings -> API)
   anonKey: ''
 };
 
