@@ -19,7 +19,7 @@ if (typeof window !== 'undefined') {
     const savedUrl = localStorage.getItem('aura_supabase_url');
     const savedKey = localStorage.getItem('aura_supabase_anon_key');
     if (savedUrl && savedUrl.trim()) {
-      SUPABASE_CONFIG.url = savedUrl.trim();
+      SUPABASE_CONFIG.url = savedUrl.trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
     }
     if (savedKey && savedKey.trim()) {
       SUPABASE_CONFIG.anonKey = savedKey.trim();

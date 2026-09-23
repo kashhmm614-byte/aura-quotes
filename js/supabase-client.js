@@ -12,11 +12,22 @@ class AuraSupabaseClient {
   }
 
   /**
+   * Cleans and normalizes Supabase URL (strips /rest/v1 and trailing slashes)
+   */
+  static cleanUrl(url) {
+    if (!url) return '';
+    let cleaned = String(url).trim();
+    cleaned = cleaned.replace(/\/rest\/v1\/?$/i, '');
+    cleaned = cleaned.replace(/\/+$/, '');
+    return cleaned;
+  }
+
+  /**
    * Initializes Supabase client using SUPABASE_CONFIG
    */
   init(config = null) {
     const cfg = config || (typeof SUPABASE_CONFIG !== 'undefined' ? SUPABASE_CONFIG : {});
-    this.url = (cfg.url || '').trim();
+    this.url = AuraSupabaseClient.cleanUrl(cfg.url);
     this.anonKey = (cfg.anonKey || '').trim();
 
     if (!this.url || !this.anonKey) {
