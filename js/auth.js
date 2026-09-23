@@ -6,7 +6,7 @@ class AuraAuth {
     this.storageKey = 'aura_user_session';
     this.currentUser = null;
     this.listeners = [];
-    this.clientId = '8492019384-auraquote.apps.googleusercontent.com'; // Default or customizable Google Client ID
+    this.clientId = (typeof GOOGLE_CONFIG !== 'undefined' && GOOGLE_CONFIG.clientId) ? GOOGLE_CONFIG.clientId : '';
   }
 
   /**
@@ -251,9 +251,14 @@ class AuraAuth {
     const btnContainer = document.getElementById('googleBtnContainer');
     if (!btnContainer || !window.google || !window.google.accounts) return;
 
+    const clientId = this.clientId || (typeof GOOGLE_CONFIG !== 'undefined' ? GOOGLE_CONFIG.clientId : '');
+    if (!clientId) {
+      return;
+    }
+
     try {
       window.google.accounts.id.initialize({
-        client_id: this.clientId,
+        client_id: clientId,
         callback: (res) => this.handleGoogleCredential(res),
         auto_select: false,
         cancel_on_tap_outside: true
