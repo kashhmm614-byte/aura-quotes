@@ -28,7 +28,7 @@
       ]
     },
     {
-      "source": "/js/(google-config|auth|app|neon-client).js",
+      "source": "/js/(google-config|auth|app|neon-client|db).js",
       "headers": [
         {
           "key": "Cache-Control",

@@ -3,7 +3,7 @@ const { containsBadWords } = require('../js/bad-words.js');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
@@ -12,6 +12,9 @@ module.exports = async function handler(req, res) {
 
   const dbUrl = (process.env.DATABASE_URL || process.env.NEON_DATABASE_URL || '').trim();
   if (!dbUrl) {
+    if (req.method === 'DELETE') {
+      return res.status(503).json({ success: false, message: 'Neon database is not configured.' });
+    }
     return res.status(200).json({ success: false, quotes: [], source: 'offline' });
   }
 
@@ -52,6 +55,15 @@ module.exports = async function handler(req, res) {
           theme = EXCLUDED.theme;
       `;
       return res.status(201).json({ success: true, quoteId: q.id });
+    }
+
+    if (req.method === 'DELETE') {
+      const id = req.query?.id;
+      if (!id) {
+        return res.status(400).json({ success: false, message: 'Quote id is required.' });
+      }
+      await sql`DELETE FROM quotes WHERE id = ${id} AND is_custom = true;`;
+      return res.status(200).json({ success: true, id });
     }
 
     return res.status(405).json({ success: false, message: 'Method Not Allowed' });

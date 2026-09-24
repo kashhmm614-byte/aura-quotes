@@ -67,6 +67,9 @@ class AuraApp {
       console.error('Database initialization error:', e);
     }
 
+    // Pull shared quotes + favorites from Neon so all devices match
+    await this._hydrateCloud();
+
     if (typeof auraPixelReveal !== 'undefined') {
       auraPixelReveal.setProgress(65, 'Authenticating session...');
     }
@@ -413,6 +416,7 @@ class AuraApp {
           this._hideAuthGate();
           this._renderUserProfile(user);
           this._syncUserToNeon(user);
+          this._hydrateCloud();
         } else {
           this._showAuthGate();
           this._clearUserProfile();
@@ -506,6 +510,34 @@ class AuraApp {
     } catch (e) {
       console.warn('Neon user sync failed:', e.message);
     }
+  }
+
+  /**
+   * Merges the cloud quote list + the signed-in user's favorites into local
+   * storage so every device shows the same quotes for the same Google account.
+   */
+  async _hydrateCloud() {
+    if (typeof auraNeon === 'undefined' || !auraNeon.isConfigured) return;
+    if (this._hydratePromise) return this._hydratePromise;
+
+    this._hydratePromise = (async () => {
+      try {
+        await auraDB.hydrateFromServer();
+        const user = typeof auraAuth !== 'undefined' ? auraAuth.getUser() : null;
+        if (user && user.uid) {
+          await auraDB.hydrateFavorites(user.uid);
+        }
+        if (this.elements.modalVault && this.elements.modalVault.classList.contains('open')) {
+          await this.renderVault();
+        }
+      } catch (e) {
+        console.warn('Cloud hydrate failed:', e.message);
+      } finally {
+        this._hydratePromise = null;
+      }
+    })();
+
+    return this._hydratePromise;
   }
 
   _hideAuthGate() {
@@ -1008,12 +1040,14 @@ class AuraApp {
     }
 
     try {
+      const user = typeof auraAuth !== 'undefined' ? auraAuth.getUser() : null;
       const newQuote = await auraDB.addQuote({
         text,
         author,
         category,
         tags: rawTags,
-        theme: this.selectedMood || 'midnight'
+        theme: this.selectedMood || 'midnight',
+        createdBy: user && user.uid ? user.uid : null
       });
 
       this.closeModal(this.elements.modalCreate);

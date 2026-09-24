@@ -57,7 +57,7 @@ function sendJson(res, statusCode, data) {
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-store',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization'
   });
   res.end(JSON.stringify(data));
@@ -94,7 +94,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     });
     res.end();
@@ -250,6 +250,42 @@ const server = http.createServer(async (req, res) => {
         `;
 
         return sendJson(res, 201, { success: true, quoteId: q.id });
+      }
+
+      // 5b. DELETE /api/quotes?id=...
+      if (pathname === '/api/quotes' && req.method === 'DELETE') {
+        const sql = getNeonClient();
+        if (!sql) {
+          return sendJson(res, 503, { success: false, message: 'Neon database is not configured.' });
+        }
+
+        const id = urlObj.searchParams.get('id');
+        if (!id) {
+          return sendJson(res, 400, { success: false, message: 'Quote id is required.' });
+        }
+
+        await sql`DELETE FROM quotes WHERE id = ${id} AND is_custom = true;`;
+        return sendJson(res, 200, { success: true, id });
+      }
+
+      // 5c. GET /api/favorites?userUid=...
+      if (pathname === '/api/favorites' && req.method === 'GET') {
+        const sql = getNeonClient();
+        if (!sql) {
+          return sendJson(res, 200, { success: false, quoteIds: [], source: 'offline' });
+        }
+
+        const userUid = urlObj.searchParams.get('userUid');
+        if (!userUid) {
+          return sendJson(res, 400, { success: false, message: 'userUid is required.' });
+        }
+
+        const rows = await sql`SELECT quote_id FROM favorites WHERE user_uid = ${userUid};`;
+        return sendJson(res, 200, {
+          success: true,
+          quoteIds: rows.map(r => r.quote_id),
+          source: 'neon'
+        });
       }
 
       // 6. POST /api/users/sync

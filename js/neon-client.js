@@ -136,6 +136,36 @@ class AuraNeonClient {
   }
 
   /**
+   * Deletes a custom quote from Neon
+   */
+  async deleteQuote(id) {
+    if (!id) return false;
+    try {
+      const res = await fetch(`/api/quotes?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+      return res.ok;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Fetches favorite quote IDs for a user from Neon
+   */
+  async getFavorites(userUid) {
+    if (!userUid) return null;
+    try {
+      const res = await fetch(`/api/favorites?userUid=${encodeURIComponent(userUid)}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return (data.success && Array.isArray(data.quoteIds)) ? data.quoteIds : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
    * Batch syncs all local quotes to Neon
    */
   async syncAllQuotes(quotes, onProgress = null) {

@@ -261,7 +261,7 @@ class AuraDB {
   /**
    * Creates and stores a new custom quote
    */
-  async addQuote({ text, author, category, tags = [], theme = 'midnight' }) {
+  async addQuote({ text, author, category, tags = [], theme = 'midnight', createdBy = null }) {
     if (!text || !text.trim()) {
       throw new Error('Quote text is required.');
     }
@@ -283,6 +283,7 @@ class AuraDB {
       tags: Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim()).filter(Boolean),
       theme: theme || 'midnight',
       isCustom: true,
+      createdBy: createdBy || null,
       likes: 0,
       createdAt: new Date().toISOString()
     };
@@ -308,7 +309,7 @@ class AuraDB {
   }
 
   /**
-   * Deletes a custom quote
+   * Deletes a custom quote (locally + propagates to Neon)
    */
   async deleteQuote(id) {
     if (this.useFallback) {
@@ -317,10 +318,115 @@ class AuraDB {
       delete data.favorites[id];
       this._saveFallbackData(data);
       this.invalidateCache();
-      return;
+    } else {
+      await this._delete('quotes', id);
+      await this._delete('favorites', id);
+      this.invalidateCache();
     }
-    await this._delete('quotes', id);
-    await this._delete('favorites', id);
+    if (typeof auraNeon !== 'undefined') {
+      auraNeon.deleteQuote(id).catch(e => console.warn('Neon delete warning:', e));
+    }
+  }
+
+  /**
+   * Normalizes a Neon row (snake_case) into the local quote shape
+   */
+  _normalizeServerQuote(row) {
+    let tags = row.tags;
+    if (typeof tags === 'string') {
+      try { tags = JSON.parse(tags); } catch { tags = []; }
+    }
+    if (!Array.isArray(tags)) tags = [];
+    return {
+      id: row.id,
+      text: row.text,
+      author: row.author,
+      category: row.category || 'General',
+      tags,
+      theme: row.theme || 'midnight',
+      isCustom: !!row.is_custom,
+      createdBy: row.created_by || null,
+      likes: row.likes || 0,
+      createdAt: row.created_at || row.createdAt || new Date().toISOString()
+    };
+  }
+
+  /**
+   * Pulls the shared quote list from Neon and merges it into local storage,
+   * then pushes any local custom quotes the server does not know about yet.
+   * This is what keeps multiple devices on the same account in sync.
+   */
+  async hydrateFromServer() {
+    if (typeof auraNeon === 'undefined' || !auraNeon.isConfigured) return 0;
+
+    const remote = await auraNeon.getQuotes();
+    if (!Array.isArray(remote) || remote.length === 0) return 0;
+
+    const normalized = remote
+      .filter(r => r && r.id)
+      .map(r => this._normalizeServerQuote(r));
+
+    const local = await this.getAllQuotes();
+    const remoteIds = new Set(normalized.map(q => q.id));
+    const localOnlyCustoms = (local || []).filter(q => q.isCustom && !remoteIds.has(q.id));
+
+    if (this.useFallback) {
+      const data = this._getFallbackData();
+      const byId = new Map((data.quotes || []).map(q => [q.id, q]));
+      for (const rq of normalized) byId.set(rq.id, rq);
+      data.quotes = Array.from(byId.values());
+      this._saveFallbackData(data);
+    } else {
+      for (const rq of normalized) {
+        await this._put('quotes', rq);
+      }
+    }
+
+    for (const q of localOnlyCustoms) {
+      auraNeon.insertQuote(q).catch(e => console.warn('Neon push warning:', e));
+    }
+
+    this.invalidateCache();
+    return normalized.length;
+  }
+
+  /**
+   * Pulls the user's favorites from Neon and merges both directions.
+   */
+  async hydrateFavorites(userUid) {
+    if (!userUid || typeof auraNeon === 'undefined' || !auraNeon.isConfigured) return;
+
+    const remoteIds = await auraNeon.getFavorites(userUid);
+    if (!Array.isArray(remoteIds)) return;
+
+    let localIds = [];
+    if (this.useFallback) {
+      localIds = Object.keys(this._getFallbackData().favorites || {});
+    } else {
+      localIds = (await this._getAll('favorites')).map(f => f.quoteId);
+    }
+
+    const remoteSet = new Set(remoteIds);
+    const localSet = new Set(localIds);
+
+    for (const id of remoteIds) {
+      if (localSet.has(id)) continue;
+      if (this.useFallback) {
+        const data = this._getFallbackData();
+        data.favorites = data.favorites || {};
+        data.favorites[id] = { quoteId: id, savedAt: Date.now() };
+        this._saveFallbackData(data);
+      } else {
+        await this._put('favorites', { quoteId: id, savedAt: Date.now() });
+      }
+    }
+
+    for (const id of localIds) {
+      if (!remoteSet.has(id)) {
+        auraNeon.syncFavorite(userUid, id, 'add').catch(() => {});
+      }
+    }
+
     this.invalidateCache();
   }
 
