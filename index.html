@@ -12,11 +12,38 @@
   <!-- Stylesheets -->
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/pixel-reveal.css">
 
   <!-- Google Identity Services (GIS) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+  <!-- Pixel Reveal Loading & Entrance Curtain -->
+  <div id="pixelRevealCurtain" class="pixel-reveal-curtain" aria-label="Loading AuraQuote Sanctuary" role="status">
+    <canvas id="pixelRevealCanvas" class="pixel-reveal-canvas"></canvas>
+    <div class="pixel-reveal-hud" id="pixelRevealHud">
+      <div class="pixel-reveal-brand">
+        <div class="pixel-reveal-emblem" aria-hidden="true">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+            <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+          </svg>
+        </div>
+        <div class="pixel-reveal-title">AURAQUOTE</div>
+        <div class="pixel-reveal-tagline">DAILY EDITORIAL WISDOM</div>
+      </div>
+      <div class="pixel-reveal-progress-box">
+        <div class="pixel-reveal-bar-track">
+          <div class="pixel-reveal-bar-fill" id="pixelRevealBar"></div>
+        </div>
+        <div class="pixel-reveal-status">
+          <span class="pixel-reveal-text" id="pixelRevealText">Materializing sanctuary...</span>
+          <span class="pixel-reveal-percent" id="pixelRevealPercent">0%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Ambient Atmosphere Glow & Interactive Stardust Canvas -->
   <div class="ambient-glow" aria-hidden="true"></div>
   <canvas id="ambientCanvas" class="ambient-canvas" aria-hidden="true"></canvas>
@@ -209,6 +236,11 @@
           <button type="button" class="dropdown-item" id="btnOpenNeonModal">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
             <span>Neon Console DB</span>
+          </button>
+
+          <button type="button" class="dropdown-item" id="btnReplayReveal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span>Replay Entrance</span>
           </button>
 
           <button type="button" class="dropdown-item btn-signout" id="btnSignOut">
@@ -613,6 +645,7 @@
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
   <!-- Application Scripts -->
+  <script src="js/pixel-reveal.js"></script>
   <script src="js/neon-client.js"></script>
   <script src="js/bad-words.js"></script>
   <script src="js/google-config.js"></script>

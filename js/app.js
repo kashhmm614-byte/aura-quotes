@@ -29,6 +29,16 @@ class AuraApp {
    * Initializes the application
    */
   async init() {
+    // Initialize Pixel Reveal Curtain
+    if (typeof auraPixelReveal !== 'undefined') {
+      try {
+        auraPixelReveal.init();
+        auraPixelReveal.setProgress(15, 'Preparing sanctuary...');
+      } catch (e) {
+        console.warn('Pixel reveal init error:', e);
+      }
+    }
+
     this._cacheDOMElements();
     this._bindEvents();
     this._bindTouchGestures();
@@ -46,6 +56,10 @@ class AuraApp {
     this._initTheme();
     this._initNeonUI();
 
+    if (typeof auraPixelReveal !== 'undefined') {
+      auraPixelReveal.setProgress(40, 'Initializing database...');
+    }
+
     // Initialize Database
     try {
       await auraDB.init();
@@ -53,8 +67,16 @@ class AuraApp {
       console.error('Database initialization error:', e);
     }
 
+    if (typeof auraPixelReveal !== 'undefined') {
+      auraPixelReveal.setProgress(65, 'Authenticating session...');
+    }
+
     // Setup Authentication & 10-Digit Member UID
     this._initAuth();
+
+    if (typeof auraPixelReveal !== 'undefined') {
+      auraPixelReveal.setProgress(85, 'Curating daily inspiration...');
+    }
 
     // Load Daily Quote
     await this.loadDailyQuote();
@@ -67,6 +89,14 @@ class AuraApp {
 
     // Check for keyboard shortcuts
     this._bindKeyboardShortcuts();
+
+    // Complete Entrance Pixel Reveal
+    if (typeof auraPixelReveal !== 'undefined') {
+      auraPixelReveal.setProgress(100, 'Welcome to AuraQuote');
+      setTimeout(() => {
+        auraPixelReveal.reveal();
+      }, 180);
+    }
   }
 
   _cacheDOMElements() {
@@ -98,6 +128,7 @@ class AuraApp {
       dropdownUidDisplay: document.getElementById('dropdownUidDisplay'),
       btnCopyUid: document.getElementById('btnCopyUid'),
       btnSignOut: document.getElementById('btnSignOut'),
+      btnReplayReveal: document.getElementById('btnReplayReveal'),
 
       // Action Buttons
       btnSpeak: document.getElementById('btnSpeak'),
@@ -304,6 +335,19 @@ class AuraApp {
         this._vibrate(12);
         this.openModal(this.elements.modalVault);
         this.renderVault();
+      });
+    }
+
+    // Replay Pixel Reveal Entrance
+    if (this.elements.btnReplayReveal) {
+      this.elements.btnReplayReveal.addEventListener('click', () => {
+        this._vibrate(10);
+        if (this.elements.userDropdownMenu) {
+          this.elements.userDropdownMenu.classList.remove('active');
+        }
+        if (typeof auraPixelReveal !== 'undefined') {
+          auraPixelReveal.replay();
+        }
       });
     }
 
