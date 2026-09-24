@@ -950,6 +950,19 @@ class AuraApp {
       return;
     }
 
+    if (typeof AuraBadWords !== 'undefined' && AuraBadWords.containsBadWords(text)) {
+      this.showToast('🚫 Inappropriate language detected. Quote rejected.', 'error');
+      return;
+    }
+    if (typeof AuraBadWords !== 'undefined' && AuraBadWords.containsBadWords(author)) {
+      this.showToast('🚫 Inappropriate language in author name.', 'error');
+      return;
+    }
+    if (typeof AuraBadWords !== 'undefined' && AuraBadWords.containsBadWords(rawTags)) {
+      this.showToast('🚫 Inappropriate language in tags.', 'error');
+      return;
+    }
+
     try {
       const newQuote = await auraDB.addQuote({
         text,
@@ -968,7 +981,10 @@ class AuraApp {
       this._triggerConfetti();
     } catch (err) {
       console.error('Error saving quote:', err);
-      this.showToast('Could not save quote to database.', 'error');
+      const msg = (err && err.message && /inappropriate|bad word|profan/i.test(err.message))
+        ? '🚫 Inappropriate language detected. Quote rejected.'
+        : 'Could not save quote to database.';
+      this.showToast(msg, 'error');
     }
   }
 

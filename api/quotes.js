@@ -1,4 +1,5 @@
 const { neon } = require('@neondatabase/serverless');
+const { containsBadWords } = require('../js/bad-words.js');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -32,6 +33,11 @@ module.exports = async function handler(req, res) {
       const q = req.body?.quote;
       if (!q || !q.id || !q.text || !q.author) {
         return res.status(400).json({ success: false, message: 'Invalid quote payload.' });
+      }
+
+      const tagsStr = Array.isArray(q.tags) ? q.tags.join(' ') : String(q.tags || '');
+      if (containsBadWords(q.text) || containsBadWords(q.author) || containsBadWords(tagsStr) || containsBadWords(q.category || '')) {
+        return res.status(400).json({ success: false, message: 'Inappropriate language detected. Quote rejected.' });
       }
 
       const tagsJson = JSON.stringify(q.tags || []);

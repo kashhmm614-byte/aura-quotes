@@ -266,6 +266,15 @@ class AuraDB {
       throw new Error('Quote text is required.');
     }
 
+    if (typeof AuraBadWords !== 'undefined') {
+      const fields = [text, author, Array.isArray(tags) ? tags.join(' ') : String(tags || '')];
+      for (const field of fields) {
+        if (AuraBadWords.containsBadWords(field)) {
+          throw new Error('Inappropriate language detected. Quote rejected.');
+        }
+      }
+    }
+
     const newQuote = {
       id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
       text: text.trim(),

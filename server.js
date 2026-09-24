@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { neon } = require('@neondatabase/serverless');
+const { containsBadWords } = require('./js/bad-words.js');
 
 const PORT = process.env.PORT || 3000;
 const ROOT_DIR = __dirname;
@@ -229,6 +230,11 @@ const server = http.createServer(async (req, res) => {
         const q = body.quote;
         if (!q || !q.id || !q.text || !q.author) {
           return sendJson(res, 400, { success: false, message: 'Invalid quote payload.' });
+        }
+
+        const tagsStr = Array.isArray(q.tags) ? q.tags.join(' ') : String(q.tags || '');
+        if (containsBadWords(q.text) || containsBadWords(q.author) || containsBadWords(tagsStr) || containsBadWords(q.category || '')) {
+          return sendJson(res, 400, { success: false, message: 'Inappropriate language detected. Quote rejected.' });
         }
 
         const tagsJson = JSON.stringify(q.tags || []);
