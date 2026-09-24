@@ -10,7 +10,6 @@ class AuraDB {
     this.db = null;
     this.useFallback = false;
     this.fallbackKey = 'auraquote_fallback_store';
-    this.supabaseEnabled = false;
     this._cachedQuotes = null;
     this._cachedFavorites = null;
   }
@@ -35,14 +34,6 @@ class AuraDB {
           console.log('🐘 AuraQuote: Neon Serverless Postgres adapter connected.');
         }
       } catch (e) {}
-    }
-
-    // Check for Supabase Cloud connection
-    if (typeof auraSupabase !== 'undefined') {
-      this.supabaseEnabled = auraSupabase.init();
-      if (this.supabaseEnabled) {
-        console.log('☁️ AuraQuote: Supabase Cloud database adapter connected.');
-      }
     }
 
     if (!('indexedDB' in window)) {
@@ -296,9 +287,6 @@ class AuraDB {
       if (typeof auraNeon !== 'undefined') {
         auraNeon.insertQuote(newQuote).catch(e => console.warn('Neon insert warning:', e));
       }
-      if (this.supabaseEnabled && typeof auraSupabase !== 'undefined') {
-        auraSupabase.insertQuote(newQuote).catch(e => console.warn('Supabase insert warning:', e));
-      }
       return newQuote;
     }
 
@@ -306,9 +294,6 @@ class AuraDB {
     this.invalidateCache();
     if (typeof auraNeon !== 'undefined') {
       auraNeon.insertQuote(newQuote).catch(e => console.warn('Neon insert warning:', e));
-    }
-    if (this.supabaseEnabled && typeof auraSupabase !== 'undefined') {
-      auraSupabase.insertQuote(newQuote).catch(e => console.warn('Supabase insert warning:', e));
     }
     return newQuote;
   }
@@ -520,9 +505,6 @@ class AuraDB {
       } else {
         await this._delete('favorites', quoteId);
       }
-      if (this.supabaseEnabled && typeof auraSupabase !== 'undefined' && userUid) {
-        auraSupabase.removeFavorite(userUid, quoteId).catch(() => {});
-      }
       if (typeof auraNeon !== 'undefined' && auraNeon.isConfigured && userUid) {
         auraNeon.syncFavorite(userUid, quoteId, 'remove').catch(() => {});
       }
@@ -537,25 +519,11 @@ class AuraDB {
       } else {
         await this._put('favorites', favObj);
       }
-      if (this.supabaseEnabled && typeof auraSupabase !== 'undefined' && userUid) {
-        auraSupabase.addFavorite(userUid, quoteId).catch(() => {});
-      }
       if (typeof auraNeon !== 'undefined' && auraNeon.isConfigured && userUid) {
         auraNeon.syncFavorite(userUid, quoteId, 'add').catch(() => {});
       }
       return true;
     }
-  }
-
-  /**
-   * Syncs all quotes to Supabase cloud
-   */
-  async syncAllToSupabase(onProgress = null) {
-    if (!this.supabaseEnabled || typeof auraSupabase === 'undefined') {
-      return { success: false, message: 'Supabase is not configured yet.' };
-    }
-    const all = await this.getAllQuotes();
-    return await auraSupabase.syncBatchQuotes(all, onProgress);
   }
 
   async isFavorite(quoteId) {

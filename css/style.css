@@ -235,6 +235,9 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: nowrap;
+  min-width: 0;
+  gap: var(--space-sm);
   padding: var(--space-md) var(--space-xl);
   border-bottom: 1px solid var(--border-subtle);
   backdrop-filter: blur(12px);
@@ -544,6 +547,8 @@ button {
   line-height: 1.45;
   color: var(--text-primary);
   letter-spacing: -0.015em;
+  overflow-wrap: break-word;
+  word-break: break-word;
   transition: opacity var(--transition-base);
 }
 
@@ -916,9 +921,10 @@ kbd {
    -------------------------------------------------------------------------- */
 .vault-tabs {
   display: flex;
+  flex-wrap: wrap;
   border-bottom: 1px solid var(--border-subtle);
   margin-bottom: var(--space-md);
-  gap: var(--space-md);
+  gap: var(--space-sm);
 }
 
 .vault-tab {
@@ -1221,6 +1227,9 @@ kbd {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 0;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -1246,6 +1255,9 @@ kbd {
   z-index: 2;
   width: 92%;
   max-width: 460px;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 36px 32px;
   background: var(--bg-card);
   border: 1px solid var(--border-card);
@@ -1493,6 +1505,12 @@ kbd {
   transform: translateY(-6px);
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Theme row only used inside profile dropdown on mobile */
+.dropdown-theme-row {
+  display: none;
+  margin-bottom: 4px;
 }
 
 .user-profile-widget.open .user-dropdown-menu {

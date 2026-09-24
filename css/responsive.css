@@ -58,6 +58,13 @@
 
   .header-actions {
     gap: 6px;
+    margin-left: auto;
+  }
+
+  /* Theme switcher moves into profile dropdown on mobile — prevents header overflow */
+  .header-center .theme-selector,
+  .header-actions > .theme-selector {
+    display: none !important;
   }
 
   /* User profile widget on mobile */
@@ -91,19 +98,30 @@
     font-size: 1.35rem;
   }
 
-  .theme-selector {
-    padding: 2px;
-    gap: 1px;
+  /* Theme switcher inside profile dropdown (mobile) */
+  .dropdown-theme-row {
+    display: block;
   }
 
-  .theme-btn {
-    width: 28px;
-    height: 28px;
+  .dropdown-theme-row .theme-selector {
+    display: flex !important;
+    width: 100%;
+    justify-content: space-between;
+    background: transparent;
+    border: none;
+    padding: 0;
+    gap: 6px;
   }
 
-  .theme-btn svg {
-    width: 13px;
-    height: 13px;
+  .dropdown-theme-row .theme-btn {
+    width: 40px;
+    height: 40px;
+    flex: 1;
+  }
+
+  .dropdown-theme-row .theme-btn svg {
+    width: 16px;
+    height: 16px;
   }
 
   /* Main Container on Mobile */
@@ -386,8 +404,8 @@
   }
 
   .icon-btn {
-    width: 38px;
-    height: 38px;
+    width: 42px;
+    height: 42px;
   }
 
   .icon-btn svg {
@@ -395,14 +413,14 @@
     height: 16px;
   }
 
-  .theme-btn {
-    width: 25px;
-    height: 25px;
+  .dropdown-theme-row .theme-btn {
+    width: 42px;
+    height: 42px;
   }
 
-  .theme-btn svg {
-    width: 12px;
-    height: 12px;
+  .dropdown-theme-row .theme-btn svg {
+    width: 16px;
+    height: 16px;
   }
 
   .btn-generate {
