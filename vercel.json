@@ -19,7 +19,7 @@
       ]
     },
     {
-      "source": "/(css|js|assets)/(.*)",
+      "source": "/assets/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -28,7 +28,7 @@
       ]
     },
     {
-      "source": "/js/(google-config|auth|app|neon-client|db).js",
+      "source": "/api/(.*)",
       "headers": [
         {
           "key": "Cache-Control",

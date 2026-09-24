@@ -1,5 +1,5 @@
 const { neon } = require('@neondatabase/serverless');
-const { containsBadWords } = require('../js/bad-words.js');
+const { containsBadWords } = require('../shared/bad-words.js');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

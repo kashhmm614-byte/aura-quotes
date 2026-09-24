@@ -4,9 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { neon } = require('@neondatabase/serverless');
-const { containsBadWords } = require('./js/bad-words.js');
+const { containsBadWords } = require('./shared/bad-words.js');
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 const ROOT_DIR = __dirname;
 
 let currentDbUrl = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL || '';

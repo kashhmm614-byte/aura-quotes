@@ -1,6 +1,11 @@
 # Dependencies
 node_modules/
 
+# Build output
+dist/
+.tsbuildinfo
+*.tsbuildinfo
+
 # Logs
 *.log
 npm-debug.log*
@@ -8,6 +13,7 @@ npm-debug.log*
 # Scratch & Dev tools
 scratch/
 .agents/
+lithos-hero/
 
 # Environment Variables
 .env

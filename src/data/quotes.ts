@@ -1,6 +1,8 @@
 // AuraQuote — Expanded Master Quotes Database (1,000+ Curated Quotes)
 // Categories: Romance, Stoicism, Mindfulness, Philosophy, Wisdom, Motivation, Innovation, Poetry & Art, Courage
-const SEED_QUOTES = [
+import type { Quote } from '../types';
+
+export const SEED_QUOTES: Quote[] = [
   {
     "id": "quote-1",
     "text": "Whatever our souls are made of, his and mine are the same.",
@@ -14995,9 +14997,3 @@ const SEED_QUOTES = [
 ];
 
 // Export for Node environment (testing) and browser window
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { SEED_QUOTES };
-}
-if (typeof window !== 'undefined') {
-    window.SEED_QUOTES = SEED_QUOTES;
-}

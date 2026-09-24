@@ -1,19 +1,10 @@
-// ============================================================================
-// AuraQuote — Neon Serverless PostgreSQL Client Adapter
-// Communicates with backend /api/ endpoints powered by @neondatabase/serverless
-// ============================================================================
+import type { AuraUser } from '../types';
 
 class AuraNeonClient {
-  constructor() {
-    this.isConfigured = false;
-    this.maskedUrl = null;
-    this.dbName = null;
-  }
+  isConfigured = false;
+  maskedUrl: string | null = null;
 
-  /**
-   * Initializes status from the server
-   */
-  async init() {
+  async init(): Promise<boolean> {
     try {
       const res = await fetch('/api/neon/status');
       if (res.ok) {
@@ -22,33 +13,26 @@ class AuraNeonClient {
         this.maskedUrl = data.maskedUrl;
       }
     } catch (e) {
-      console.warn('Neon status check notice (offline/local fallback):', e.message);
+      console.warn('Neon status check notice (offline/local fallback):', (e as Error).message);
       this.isConfigured = false;
     }
     return this.isConfigured;
   }
 
-  /**
-   * Tests a Neon connection string
-   */
-  async testConnection(connectionString) {
+  async testConnection(connectionString: string) {
     try {
       const res = await fetch('/api/neon/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ connectionString })
       });
-      const data = await res.json();
-      return data;
+      return await res.json();
     } catch (err) {
-      return { success: false, message: err.message || 'Network request failed' };
+      return { success: false, message: (err as Error).message || 'Network request failed' };
     }
   }
 
-  /**
-   * Saves and verifies Neon connection string
-   */
-  async saveConfig(connectionString) {
+  async saveConfig(connectionString: string) {
     try {
       const res = await fetch('/api/neon/config', {
         method: 'POST',
@@ -62,14 +46,11 @@ class AuraNeonClient {
       }
       return data;
     } catch (err) {
-      return { success: false, message: err.message || 'Could not save configuration' };
+      return { success: false, message: (err as Error).message || 'Could not save configuration' };
     }
   }
 
-  /**
-   * Syncs user with 10-digit UID to Neon users table
-   */
-  async syncUser(user) {
+  async syncUser(user: AuraUser): Promise<boolean> {
     if (!user || !user.uid) return false;
     try {
       const res = await fetch('/api/users/sync', {
@@ -79,15 +60,12 @@ class AuraNeonClient {
       });
       return res.ok;
     } catch (e) {
-      console.warn('Could not sync user to Neon:', e.message);
+      console.warn('Could not sync user to Neon:', (e as Error).message);
       return false;
     }
   }
 
-  /**
-   * Syncs favorite bookmark
-   */
-  async syncFavorite(userUid, quoteId, action = 'add') {
+  async syncFavorite(userUid: string, quoteId: string, action: 'add' | 'remove' = 'add'): Promise<boolean> {
     if (!userUid || !quoteId) return false;
     try {
       const res = await fetch('/api/favorites/sync', {
@@ -97,32 +75,27 @@ class AuraNeonClient {
       });
       return res.ok;
     } catch (e) {
-      console.warn('Could not sync favorite to Neon:', e.message);
+      console.warn('Could not sync favorite to Neon:', (e as Error).message);
       return false;
     }
   }
 
-  /**
-   * Fetches quotes from Neon
-   */
-  async getQuotes(category = null) {
+  async getQuotes(category: string | null = null): Promise<unknown[] | null> {
     try {
-      const url = category && category !== 'All' 
-        ? `/api/quotes?category=${encodeURIComponent(category)}`
-        : '/api/quotes';
+      const url =
+        category && category !== 'All'
+          ? `/api/quotes?category=${encodeURIComponent(category)}`
+          : '/api/quotes';
       const res = await fetch(url);
       if (!res.ok) return null;
       const data = await res.json();
-      return (data.success && Array.isArray(data.quotes)) ? data.quotes : null;
-    } catch (e) {
+      return data.success && Array.isArray(data.quotes) ? data.quotes : null;
+    } catch {
       return null;
     }
   }
 
-  /**
-   * Inserts custom quote into Neon
-   */
-  async insertQuote(quote) {
+  async insertQuote(quote: unknown): Promise<boolean> {
     try {
       const res = await fetch('/api/quotes', {
         method: 'POST',
@@ -130,51 +103,44 @@ class AuraNeonClient {
         body: JSON.stringify({ quote })
       });
       return res.ok;
-    } catch (e) {
+    } catch {
       return false;
     }
   }
 
-  /**
-   * Deletes a custom quote from Neon
-   */
-  async deleteQuote(id) {
+  async deleteQuote(id: string): Promise<boolean> {
     if (!id) return false;
     try {
       const res = await fetch(`/api/quotes?id=${encodeURIComponent(id)}`, {
         method: 'DELETE'
       });
       return res.ok;
-    } catch (e) {
+    } catch {
       return false;
     }
   }
 
-  /**
-   * Fetches favorite quote IDs for a user from Neon
-   */
-  async getFavorites(userUid) {
+  async getFavorites(userUid: string): Promise<string[] | null> {
     if (!userUid) return null;
     try {
       const res = await fetch(`/api/favorites?userUid=${encodeURIComponent(userUid)}`);
       if (!res.ok) return null;
       const data = await res.json();
-      return (data.success && Array.isArray(data.quoteIds)) ? data.quoteIds : null;
-    } catch (e) {
+      return data.success && Array.isArray(data.quoteIds) ? data.quoteIds : null;
+    } catch {
       return null;
     }
   }
 
-  /**
-   * Batch syncs all local quotes to Neon
-   */
-  async syncAllQuotes(quotes, onProgress = null) {
+  async syncAllQuotes(
+    quotes: unknown[],
+    onProgress?: (synced: number, total: number, msg?: string) => void
+  ) {
     if (!Array.isArray(quotes) || quotes.length === 0) {
       return { success: false, message: 'No quotes to sync' };
     }
-
     try {
-      if (onProgress) onProgress(0, quotes.length, 'Uploading quotes to Neon...');
+      onProgress?.(0, quotes.length, 'Uploading quotes to Neon...');
       const res = await fetch('/api/neon/sync-all', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -186,18 +152,10 @@ class AuraNeonClient {
       }
       return data;
     } catch (err) {
-      return { success: false, message: err.message || 'Sync failed' };
+      return { success: false, message: (err as Error).message || 'Sync failed' };
     }
   }
 }
 
-// Global Singleton
-const auraNeon = new AuraNeonClient();
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { AuraNeonClient, auraNeon };
-}
-if (typeof window !== 'undefined') {
-  window.AuraNeonClient = AuraNeonClient;
-  window.auraNeon = auraNeon;
-}
+export const auraNeon = new AuraNeonClient();
+export { AuraNeonClient };
