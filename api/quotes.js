@@ -1,7 +1,7 @@
-const { neon } = require('@neondatabase/serverless');
-const { containsBadWords } = require('../shared/bad-words.js');
+import { neon } from '@neondatabase/serverless';
+import { containsBadWords } from '../shared/bad-words.js';
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
