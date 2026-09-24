@@ -6,7 +6,7 @@ const os = require('os');
 const { neon } = require('@neondatabase/serverless');
 const { containsBadWords } = require('./shared/bad-words.js');
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.API_PORT || 3001;
 const ROOT_DIR = __dirname;
 
 let currentDbUrl = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL || '';
@@ -397,7 +397,19 @@ const server = http.createServer(async (req, res) => {
     reqPath = '/index.html';
   }
 
-  const filePath = path.join(ROOT_DIR, reqPath);
+  // Check dist directory first (built SPA), then ROOT_DIR
+  let filePath = path.join(ROOT_DIR, 'dist', reqPath);
+  if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+    filePath = path.join(ROOT_DIR, reqPath);
+  }
+
+  // SPA fallback: if not found and HTML requested, serve dist/index.html
+  if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+    const distIndex = path.join(ROOT_DIR, 'dist', 'index.html');
+    if (fs.existsSync(distIndex)) {
+      filePath = distIndex;
+    }
+  }
 
   // Security check: ensure path is within ROOT_DIR and prevent dotfile access
   const relative = path.relative(ROOT_DIR, filePath);
@@ -419,7 +431,7 @@ const server = http.createServer(async (req, res) => {
 
     res.writeHead(200, {
       'Content-Type': contentType,
-      'Cache-Control': 'no-cache'
+      'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000'
     });
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);
